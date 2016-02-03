@@ -25,7 +25,6 @@ Ohai.plugin(:VirtualizationInfo) do
     unless virtualization.nil? || !(virtualization[:role].eql?("host"))
       begin
         require 'libvirt'
-        require 'hpricot'
 
         emu = (virtualization[:system].eql?('kvm') ? 'qemu' : virtualization[:system])
         virtualization[:libvirt_version] = Libvirt::version(emu)[0].to_s
@@ -35,7 +34,6 @@ Ohai.plugin(:VirtualizationInfo) do
         virtualization[:uri] = virtconn.uri
         virtualization[:capabilities] = Mash.new
         virtualization[:capabilities][:xml_desc] = (virtconn.capabilities.split("\n").collect {|line| line.strip}).join
-        #xdoc = Hpricot virtualization[:capabilities][:xml_desc]
 
         virtualization[:nodeinfo] = Mash.new
         ni = virtconn.node_get_info
@@ -59,8 +57,6 @@ Ohai.plugin(:VirtualizationInfo) do
           virtualization[:networks][n] = Mash.new
           virtualization[:networks][n][:xml_desc] = (nv.xml_desc.split("\n").collect {|line| line.strip}).join
           ['bridge_name','uuid'].each {|a| virtualization[:networks][n][a] = nv.send(a)}
-          #xdoc = Hpricot virtualization[:networks][n][:xml_desc]
-
         end
 
         virtualization[:storage] = Mash.new
@@ -70,7 +66,6 @@ Ohai.plugin(:VirtualizationInfo) do
           virtualization[:storage][pool][:xml_desc] = (sp.xml_desc.split("\n").collect {|line| line.strip}).join
           ['autostart','uuid'].each {|a| virtualization[:storage][pool][a] = sp.send(a)}
           ['allocation','available','capacity','state'].each {|a| virtualization[:storage][pool][a] = sp.info.send(a)}
-          #xdoc = Hpricot virtualization[:storage][pool][:xml_desc]
 
           virtualization[:storage][pool][:volumes] = Mash.new
           sp.list_volumes.each do |v|
@@ -83,7 +78,7 @@ Ohai.plugin(:VirtualizationInfo) do
 
         virtconn.close
       rescue LoadError => e
-        Ohai::Log.debug("Can't load gem: #{e}.  virtualization plugin is disabled.")
+        Ohai::Log.debug("Can't load gem: #{e}. virtualization plugin is disabled.")
       end
     end
   end
