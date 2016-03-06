@@ -25,32 +25,6 @@ module Ohai
       GCE_METADATA_ADDR = "metadata.google.internal." unless defined?(GCE_METADATA_ADDR)
       GCE_METADATA_URL = "/computeMetadata/v1beta1/?recursive=true" unless defined?(GCE_METADATA_URL)
 
-      def can_metadata_connect?(addr, port, timeout = 2)
-        t = Socket.new(Socket::Constants::AF_INET, Socket::Constants::SOCK_STREAM, 0)
-        saddr = Socket.pack_sockaddr_in(port, addr)
-        connected = false
-
-        begin
-          t.connect_nonblock(saddr)
-        rescue Errno::EINPROGRESS
-          r, w, e = IO.select(nil, [t], nil, timeout)
-          if !w.nil?
-            connected = true
-          else
-            begin
-              t.connect_nonblock(saddr)
-            rescue Errno::EISCONN
-              t.close
-              connected = true
-            rescue SystemCallError
-            end
-          end
-        rescue SystemCallError
-        end
-        Ohai::Log.debug("can_metadata_connect? == #{connected}")
-        connected
-      end
-
       def http_client
         Net::HTTP.start(GCE_METADATA_ADDR).tap { |h| h.read_timeout = 6 }
       end
